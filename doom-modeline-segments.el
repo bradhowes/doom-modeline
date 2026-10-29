@@ -489,7 +489,10 @@ mouse-1: Previous buffer\nmouse-3: Next buffer"
         ;; Check if the buffer is modified
         (if (and doom-modeline-highlight-modified-buffer-name
                  (buffer-modified-p))
-            (propertize name 'face (doom-modeline-face 'doom-modeline-buffer-modified))
+            (propertize name 'face (doom-modeline-face 'doom-modeline-buffer-modified
+                                                       (if doom-modeline-always-highlight-modified-buffer-file-name
+                                                           'doom-modeline-buffer-modified
+                                                         nil)))
           (doom-modeline-display-text name))))))
 
 (doom-modeline-def-segment buffer-info
