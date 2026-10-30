@@ -702,7 +702,7 @@ mouse-3: Toggle minor modes"
   "The process info."
   (when (doom-modeline--segment-visible 'process t)
     (doom-modeline-display-text
-     (format-mode-line mode-line-process)))
+     (format-mode-line mode-line-process))))
 
 
 ;;
