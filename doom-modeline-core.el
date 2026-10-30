@@ -838,7 +838,7 @@ Note that `doom-modeline-tab-bar-format-global' must be added to the
 `tab-bar-format' list for this variable to take effect."
   :type '(choice (const :tag "Don't show `doom-modeline-tab-bar-format-global' on tab bar" nil)
                  (const :tag "Show `doom-modeline-tab-bar-format-global' only for active segments" active)
-                 (const :tag "Always show `doom-modeline-tab-bar-format-global' on tab bar" t))
+                 (const :tag "Always show `doom-modeline-tab-bar-format-global' on tab bar" t)))
 
 (defcustom doom-modeline-always-highlight-modified-buffer-file-name nil
   "Whether to always use `doom-modeline-buffer-modified' face.
