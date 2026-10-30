@@ -566,7 +566,8 @@ project directory is important."
 
 (doom-modeline-def-segment buffer-encoding
   "Displays the eol and the encoding style of the buffer."
-  (when doom-modeline-buffer-encoding
+  (when (and (doom-modeline--segment-visible 'buffer-encoding t)
+             doom-modeline-buffer-encoding)
     (let* ((sep (doom-modeline-spc))
            (face (doom-modeline-face))
            (mouse-face 'doom-modeline-highlight)
@@ -624,7 +625,8 @@ project directory is important."
 
 (doom-modeline-def-segment indent-info
   "Displays the indentation information."
-  (when doom-modeline-indent-info
+  (when (and (doom-modeline--segment-visible 'indent-info t)
+             doom-modeline-indent-info)
     (let ((do-propertize
            (lambda (mode size)
              (propertize
@@ -647,7 +649,9 @@ project directory is important."
 
 (doom-modeline-def-segment remote-host
   "Hostname for remote buffers."
-  (when (and doom-modeline-remote-host default-directory)
+  (when (and (doom-modeline--segment-visible 'remote-host t)
+             doom-modeline-remote-host
+             default-directory)
     (when-let* ((host (file-remote-p default-directory 'host)))
       (propertize
        (concat "@" host)
@@ -660,33 +664,34 @@ project directory is important."
 
 (doom-modeline-def-segment major-mode
   "The major mode, including environment and text-scale info."
-  (let ((sep (doom-modeline-spc))
-        (face (doom-modeline-face 'doom-modeline-buffer-major-mode)))
-    (concat
-     sep
-     (propertize
+  (when (doom-modeline--segment-visible 'major-mode t)
+    (let ((sep (doom-modeline-spc))
+          (face (doom-modeline-face 'doom-modeline-buffer-major-mode)))
       (concat
-       (format-mode-line
-        (or (and (boundp 'delighted-modes)
-                 (cadr (assq major-mode delighted-modes)))
-            mode-name))
-       (when (and doom-modeline-env-version doom-modeline-env--version)
-         (format " %s" doom-modeline-env--version)))
-      'help-echo "Major mode\n\
+       sep
+       (propertize
+        (concat
+         (format-mode-line
+          (or (and (boundp 'delighted-modes)
+                   (cadr (assq major-mode delighted-modes)))
+              mode-name))
+         (when (and doom-modeline-env-version doom-modeline-env--version)
+           (format " %s" doom-modeline-env--version)))
+        'help-echo "Major mode\n\
 mouse-1: Display major mode menu\n\
 mouse-2: Show help for major mode\n\
 mouse-3: Toggle minor modes"
-      'face face
-      'mouse-face 'doom-modeline-highlight
-      'local-map mode-line-major-mode-keymap)
-     (and (boundp 'text-scale-mode-amount)
-          (/= text-scale-mode-amount 0)
-          (propertize
-           (format
-            (if (> text-scale-mode-amount 0) " (%+d)" " (%-d)")
-            text-scale-mode-amount)
-           'face face))
-     sep)))
+        'face face
+        'mouse-face 'doom-modeline-highlight
+        'local-map mode-line-major-mode-keymap)
+       (and (boundp 'text-scale-mode-amount)
+            (/= text-scale-mode-amount 0)
+            (propertize
+             (format
+              (if (> text-scale-mode-amount 0) " (%+d)" " (%-d)")
+              text-scale-mode-amount)
+             'face face))
+       sep))))
 
 
 ;;
@@ -695,8 +700,9 @@ mouse-3: Toggle minor modes"
 
 (doom-modeline-def-segment process
   "The process info."
-  (doom-modeline-display-text
-   (format-mode-line mode-line-process)))
+  (when (doom-modeline--segment-visible 'process t)
+    (doom-modeline-display-text
+     (format-mode-line mode-line-process)))
 
 
 ;;
@@ -719,8 +725,8 @@ Show an indicator if the depth goes higher than 1."
 ;;
 
 (doom-modeline-def-segment minor-modes
-  (when (and doom-modeline-minor-modes
-             (not doom-modeline--limited-width-p))
+  (when (and (doom-modeline--segment-visible 'minor-modes)
+             doom-modeline-minor-modes)
     (let ((sep (doom-modeline-spc))
           (face (doom-modeline-face 'doom-modeline-buffer-minor-mode))
           (mouse-face 'doom-modeline-highlight)
@@ -852,7 +858,8 @@ ICON-SET is the nerd-icons set ICON belongs to, `devicon' by default."
 
 (doom-modeline-def-segment vcs
   "Displays the current branch, colored based on its state."
-  (when doom-modeline--vcs
+  (when (and (doom-modeline--segment-visible 'vcs)
+             doom-modeline--vcs)
     (let-alist doom-modeline--vcs
       (let ((sep (doom-modeline-spc))
             (vsep (doom-modeline-vspc))
@@ -1168,7 +1175,8 @@ level."
 
 (doom-modeline-def-segment check
   "Displays color-coded error status in the current buffer with pretty icons."
-  (when-let* ((sep (doom-modeline-spc))
+  (when-let* ((_ (doom-modeline--segment-visible 'check))
+              (sep (doom-modeline-spc))
               (vsep (doom-modeline-vspc))
               (seg (cond
                     ((bound-and-true-p flymake-mode)
@@ -1201,7 +1209,8 @@ level."
   "The buffer word count.
 Displayed when in a major mode in `doom-modeline-continuous-word-count-modes'.
 Respects `doom-modeline-enable-word-count'."
-  (when (and doom-modeline-enable-word-count
+  (when (and (doom-modeline--segment-visible 'word-count t)
+             doom-modeline-enable-word-count
              (member major-mode doom-modeline-continuous-word-count-modes))
     (propertize (format " %dW" (count-words (point-min) (point-max)))
                 'face (doom-modeline-face))))
@@ -1221,10 +1230,10 @@ Respects `doom-modeline-enable-word-count'."
 
 Such as how many characters and lines are selected, or the NxM dimensions of a
 block selection."
-  (when (and doom-modeline-selection-info
+  (when (and (doom-modeline--segment-visible 'selection-info)
+             doom-modeline-selection-info
              (or mark-active (and (bound-and-true-p evil-local-mode)
-                                  (eq evil-state 'visual)))
-             (doom-modeline--active))
+                                  (eq evil-state 'visual))))
     (cl-destructuring-bind (beg . end)
         (if (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual))
             (cons evil-visual-beginning evil-visual-end)
@@ -1470,7 +1479,8 @@ current search term (with `anzu'), 3. The number of substitutions being
 conducted with `evil-ex-substitute', and/or 4. The number of active `iedit'
 regions, 5. The current/total for the highlight term (with `symbol-overlay'),
 6. The number of active `multiple-cursors'."
-  (let ((meta (concat (doom-modeline--macro-recording)
+  (when-let* ((_ (doom-modeline--segment-visible 'matches))
+              (meta (concat (doom-modeline--macro-recording)
                       (doom-modeline--anzu)
                       (doom-modeline--visual-replace)
                       (doom-modeline--phi-search)
@@ -1492,11 +1502,12 @@ regions, 5. The current/total for the highlight term (with `symbol-overlay'),
 (doom-modeline-def-segment media-info
   "Metadata regarding the current file, such as dimensions for images."
   ;; TODO: Include other information
-  (cond ((eq major-mode 'image-mode)
-         (cl-destructuring-bind (width . height)
-             (when (fboundp 'image-size)
-               (image-size (image-get-display-property) :pixels))
-           (format "  %dx%d  " width height)))))
+  (when (and (doom-modeline--segment-visible 'media-info)
+             (eq major-mode 'image-mode))
+    (cl-destructuring-bind (width . height)
+        (when (fboundp 'image-size)
+          (image-size (image-get-display-property) :pixels))
+      (format "  %dx%d  " width height))))
 
 
 ;;
@@ -1606,7 +1617,8 @@ regions, 5. The current/total for the highlight term (with `symbol-overlay'),
 
 (doom-modeline-def-segment bar
   "The bar regulates the height of the `doom-modeline' in GUI."
-  (when (display-graphic-p)
+  (when (and (doom-modeline--segment-visible 'bar)
+             (display-graphic-p))
     (concat
      (if doom-modeline-hud
          (doom-modeline--hud)
@@ -1615,7 +1627,8 @@ regions, 5. The current/total for the highlight term (with `symbol-overlay'),
 
 (doom-modeline-def-segment hud
   "Powerline's hud segment reimplemented in the style of bar segment."
-  (when (display-graphic-p)
+  (when (and (doom-modeline--segment-visible 'hud)
+             (display-graphic-p))
     (concat
      (doom-modeline--hud)
      (doom-modeline-spc))))
@@ -1678,9 +1691,10 @@ See the info node `(elisp)Dedicated Windows' for more details."
 Keymap for what is displayed by `mode-line-window-dedicated'."))
 
 (doom-modeline-def-segment window-state
-  (let ((face (if (doom-modeline--active)
-                  'doom-modeline-emphasis
-                'doom-modeline)))
+  (when-let* ((_ (doom-modeline--segment-visible 'window-state))
+              (face (if (doom-modeline--active)
+                        'doom-modeline-emphasis
+                      'doom-modeline)))
     (cond
      ((eq (window-dedicated-p) t)
       (propertize
@@ -1738,16 +1752,17 @@ Keymap for what is displayed by `mode-line-window-dedicated'."))
 
 (doom-modeline-def-segment window-number
   "The current window number."
-  (let ((num (cond
-              ((bound-and-true-p ace-window-display-mode)
-               (aw-update)
-               (window-parameter (selected-window) 'ace-window-path))
-              ((bound-and-true-p winum-mode)
-               (setq winum-auto-setup-mode-line nil)
-               (winum-get-number-string))
-              ((bound-and-true-p window-numbering-mode)
-               (window-numbering-get-number-string))
-              (t ""))))
+  (when-let* ((_ (doom-modeline--segment-visible 'window-number))
+              (num (cond
+                    ((bound-and-true-p ace-window-display-mode)
+                     (aw-update)
+                     (window-parameter (selected-window) 'ace-window-path))
+                    ((bound-and-true-p winum-mode)
+                     (setq winum-auto-setup-mode-line nil)
+                     (winum-get-number-string))
+                    ((bound-and-true-p window-numbering-mode)
+                     (window-numbering-get-number-string))
+                    (t ""))))
     (when (and (length> num 0)
                (length> (cl-mapcan
                          (lambda (frame)
@@ -1809,8 +1824,8 @@ Keymap for what is displayed by `mode-line-window-dedicated'."))
 
 (doom-modeline-def-segment project-name
   "The current perspective name."
-  (when (and doom-modeline-project-name
-             (doom-modeline--segment-visible 'project-name))
+  (when (and (doom-modeline--segment-visible 'project-name)
+             doom-modeline-project-name)
     (propertize (doom-modeline-project-name)
                 'face (doom-modeline-face 'doom-modeline-project-name)
                 'mouse-face 'mode-line-highlight
@@ -1825,8 +1840,8 @@ Keymap for what is displayed by `mode-line-window-dedicated'."))
 (doom-modeline-def-segment workspace-name
   "The current workspace name.
 Requires `eyebrowse-mode' to be enabled or `tab-bar-mode' tabs to be created."
-  (when (and doom-modeline-workspace-name
-             (not doom-modeline--limited-width-p))
+  (when (and (doom-modeline--segment-visible 'workspace-name)
+             doom-modeline-workspace-name)
     (when-let*
         ((name (cond
                 ((and (bound-and-true-p eyebrowse-mode)
@@ -1939,7 +1954,8 @@ By default, this shows the information specified by `global-mode-string'."
 (doom-modeline-def-segment buffer-position
   "The buffer position information.
 Respects `doom-modeline-enable-buffer-position'."
-  (when doom-modeline-enable-buffer-position
+  (when (and (doom-modeline--segment-visible 'position)
+             doom-modeline-enable-buffer-position)
     (let ((visible (doom-modeline--segment-visible 'buffer-position))
           (sep (doom-modeline-spc))
           (wsep (doom-modeline-wspc))
@@ -2151,7 +2167,8 @@ TEXT is alternative if icon is not available."
   "Displays modal editing states.
 
 Including `evil', `overwrite', `god', `ryo' and `xha-fly-kyes', etc."
-  (when doom-modeline-modal
+  (when (and (doom-modeline--segment-visible 'modals)
+             doom-modeline-modal)
     (let* ((evil (doom-modeline--evil))
            (ow (doom-modeline--overwrite))
            (god (doom-modeline--god))
@@ -2187,8 +2204,8 @@ Including `evil', `overwrite', `god', `ryo' and `xha-fly-kyes', etc."
 
 (doom-modeline-def-segment objed-state ()
   "The current objed state."
-  (when (and doom-modeline--objed-active
-             (doom-modeline--active))
+  (when (and (doom-modeline--segment-visible 'objed-state)
+             doom-modeline--objed-active)
     (propertize (format " %s(%s) "
                         (symbol-name objed--object)
                         (char-to-string (aref (symbol-name objed--obj-state) 0)))
@@ -2204,7 +2221,8 @@ Including `evil', `overwrite', `god', `ryo' and `xha-fly-kyes', etc."
 
 (doom-modeline-def-segment input-method
   "The current input method."
-  (when-let* ((im (cond
+  (when-let* ((_ (doom-modeline--segment-visible 'input-method))
+              (im (cond
                    (current-input-method
                     current-input-method-title)
                    ((and (bound-and-true-p evil-local-mode)
@@ -2240,26 +2258,27 @@ mouse-3: Describe current input method")
 
 (doom-modeline-def-segment info-nodes
   "The topic and nodes in the Info buffer."
-  (concat
-   " ("
-   ;; topic
-   (propertize (if (stringp Info-current-file)
-                   (replace-regexp-in-string
-                    "%" "%%"
-                    (file-name-sans-extension
-                     (file-name-nondirectory Info-current-file)))
-                 (format "*%S*" Info-current-file))
-               'face (doom-modeline-face 'doom-modeline-info))
-   ") "
-   ;; node
-   (when Info-current-node
-     (propertize (replace-regexp-in-string
-                  "%" "%%" Info-current-node)
-                 'face (doom-modeline-face 'doom-modeline-buffer-path)
-                 'help-echo
-                 "mouse-1: scroll forward, mouse-3: scroll back"
-                 'mouse-face 'doom-modeline-highlight
-                 'local-map Info-mode-line-node-keymap))))
+  (when (doom-modeline--segment-visible 'info-nodes)
+    (concat
+     " ("
+     ;; topic
+     (propertize (if (stringp Info-current-file)
+                     (replace-regexp-in-string
+                      "%" "%%"
+                      (file-name-sans-extension
+                       (file-name-nondirectory Info-current-file)))
+                   (format "*%S*" Info-current-file))
+                 'face (doom-modeline-face 'doom-modeline-info))
+     ") "
+     ;; nodes
+     (when Info-current-node
+       (propertize (replace-regexp-in-string
+                    "%" "%%" Info-current-node)
+                   'face (doom-modeline-face 'doom-modeline-buffer-path)
+                   'help-echo
+                   "mouse-1: scroll forward, mouse-3: scroll back"
+                   'mouse-face 'doom-modeline-highlight
+                   'local-map Info-mode-line-node-keymap)))))
 
 
 ;;
@@ -2301,7 +2320,8 @@ mouse-3: Describe current input method")
 
 (doom-modeline-def-segment repl
   "The REPL state."
-  (when doom-modeline-repl
+  (when (and (doom-modeline--segment-visible 'repl)
+             doom-modeline-repl)
     (when-let* ((icon (when (bound-and-true-p cider-mode)
                         doom-modeline--cider))
                 (sep (doom-modeline-spc)))
@@ -2451,7 +2471,8 @@ mouse-1: Toggle citre mode"
 
 (doom-modeline-def-segment lsp
   "The LSP server state."
-  (when doom-modeline-lsp
+  (when (and (doom-modeline--segment-visible 'lsp)
+             doom-modeline-lsp)
     (when-let* ((icon (cond ((bound-and-true-p lsp-mode)
                              doom-modeline--lsp)
                             ((bound-and-true-p eglot--managed-mode)
@@ -2548,8 +2569,8 @@ It requires `async' and `ghub' packages."
 
 (doom-modeline-def-segment github
   "The GitHub notifications."
-  (when (and doom-modeline-github
-             (doom-modeline--segment-visible 'github)
+  (when (and (doom-modeline--segment-visible 'github)
+             doom-modeline-github
              (numberp doom-modeline--github-notification-number))
     (let ((sep (doom-modeline-spc)))
       (concat
@@ -2716,7 +2737,8 @@ mouse-1: Toggle Debug on Quit"
 
 (doom-modeline-def-segment pdf-pages
   "Display PDF pages."
-  doom-modeline--pdf-pages)
+  (when (doom-modeline--segment-visible 'pdf-pages)
+    doom-modeline--pdf-pages))
 
 
 ;;
@@ -2736,7 +2758,8 @@ mouse-1: Toggle Debug on Quit"
 
 (doom-modeline-def-segment reader-pages
   "Display Emacs Reader document pages."
-  doom-modeline--reader-pages)
+  (when (doom-modeline--segment-visible 'reader-pages)
+    doom-modeline--reader-pages))
 
 ;;
 ;; `mu4e' notifications
@@ -2744,8 +2767,8 @@ mouse-1: Toggle Debug on Quit"
 
 (doom-modeline-def-segment mu4e
   "Show notifications of any unread emails in `mu4e'."
-  (when (and doom-modeline-mu4e
-             (doom-modeline--segment-visible 'mu4e))
+  (when (and (doom-modeline--segment-visible 'mu4e)
+             doom-modeline-mu4e)
     (when-let* ((sep (doom-modeline-spc))
                 (vsep (doom-modeline-vspc))
                 (icon (doom-modeline-icon 'mdicon "nf-md-email" "📧" "#"
@@ -2995,8 +3018,8 @@ The return value is based on the variable `tracking-faces-priorities'."
 ;; Create a modeline segment that contains all the irc tracked buffers
 (doom-modeline-def-segment irc-buffers
   "The list of shortened, unread irc buffers."
-  (when (and doom-modeline-irc
-             (doom-modeline--segment-visible 'irc-buffers))
+  (when (and (doom-modeline--segment-visible 'irc-buffers)
+             doom-modeline-irc)
     (let* ((buffers (doom-modeline--get-buffers))
            (number (length buffers))
            (sep (doom-modeline-spc)))
@@ -3008,8 +3031,8 @@ The return value is based on the variable `tracking-faces-priorities'."
 
 (doom-modeline-def-segment irc
   "A notification icon for any unread irc buffer."
-  (when (and doom-modeline-irc
-             (doom-modeline--segment-visible 'irc))
+  (when (and (doom-modeline--segment-visible 'irc)
+             doom-modeline-irc)
     (let* ((buffers (doom-modeline--get-buffers))
            (number (length buffers))
            (sep (doom-modeline-spc))
@@ -3233,9 +3256,9 @@ Uses `nerd-icons-mdicon' to fetch the icon."
 
 (doom-modeline-def-segment battery
   "Display battery status."
-  (when (and doom-modeline-battery
-             (bound-and-true-p display-battery-mode)
-             (doom-modeline--segment-visible 'battery))
+  (when (and (doom-modeline--segment-visible 'battery)
+             doom-modeline-battery
+             (bound-and-true-p display-battery-mode))
     (let ((sep (doom-modeline-spc))
           (vsep (doom-modeline-vspc)))
       (concat sep
@@ -3283,21 +3306,22 @@ Uses `nerd-icons-mdicon' to fetch the icon."
 
 (doom-modeline-def-segment package
   "Show package information."
-  (concat
-   (doom-modeline-display-text
-    (format-mode-line 'mode-line-front-space))
+  (when (doom-modeline--segment-visible 'package)
+    (concat
+     (doom-modeline-display-text
+      (format-mode-line 'mode-line-front-space))
 
-   (when (and doom-modeline-icon doom-modeline-major-mode-icon)
-     (concat
-      (doom-modeline-spc)
-      (doom-modeline-icon 'faicon "nf-fa-archive" nil nil
-                          :face (doom-modeline-face
-                                 (if doom-modeline-major-mode-color-icon
-                                     'nerd-icons-silver
-                                   'mode-line)))
-      (doom-modeline-vspc)))
-   (doom-modeline-display-text
-    (format-mode-line 'mode-line-buffer-identification))))
+     (when (and doom-modeline-icon doom-modeline-major-mode-icon)
+       (concat
+        (doom-modeline-spc)
+        (doom-modeline-icon 'faicon "nf-fa-archive" nil nil
+                            :face (doom-modeline-face
+                                   (if doom-modeline-major-mode-color-icon
+                                       'nerd-icons-silver
+                                     'mode-line)))
+        (doom-modeline-vspc)))
+     (doom-modeline-display-text
+      (format-mode-line 'mode-line-buffer-identification)))))
 
 
 ;;
@@ -3318,7 +3342,8 @@ The cdr can also be a function that returns a name to use.")
 
 (doom-modeline-def-segment helm-buffer-id
   "Helm session identifier."
-  (when (bound-and-true-p helm-alive-p)
+  (when (and (doom-modeline--segment-visible 'helm-buffer-id)
+             (bound-and-true-p helm-alive-p))
     (let ((sep (doom-modeline-spc)))
       (concat
        sep
@@ -3343,7 +3368,8 @@ The cdr can also be a function that returns a name to use.")
 
 (doom-modeline-def-segment helm-number
   "Number of helm candidates."
-  (when (bound-and-true-p helm-alive-p)
+  (when (and (doom-modeline--segment-visible 'helm-number)
+             (bound-and-true-p helm-alive-p))
     (concat
      (propertize (format " %d/%d"
                          (helm-candidate-number-at-point)
@@ -3354,7 +3380,8 @@ The cdr can also be a function that returns a name to use.")
 
 (doom-modeline-def-segment helm-help
   "Helm keybindings help."
-  (when (bound-and-true-p helm-alive-p)
+  (when (and (doom-modeline--segment-visible 'helm-help)
+              (bound-and-true-p helm-alive-p))
     (mapcar
      (lambda (s)
        (if (string-prefix-p "\\<" s)
@@ -3368,7 +3395,8 @@ The cdr can also be a function that returns a name to use.")
 
 (doom-modeline-def-segment helm-prefix-argument
   "Helm prefix argument."
-  (when (and (bound-and-true-p helm-alive-p)
+  (when (and (doom-modeline--segment-visible 'helm-prefix-argument)
+             (bound-and-true-p helm-alive-p)
              helm--mode-line-display-prefarg)
     (let ((arg (prefix-numeric-value (or prefix-arg current-prefix-arg))))
       (unless (= arg 1)
@@ -3379,28 +3407,31 @@ The cdr can also be a function that returns a name to use.")
   "The currently active helm source.")
 (doom-modeline-def-segment helm-follow
   "Helm follow indicator."
-  (and (bound-and-true-p helm-alive-p)
-       doom-modeline--helm-current-source
-       (eq 1 (cdr (assq 'follow doom-modeline--helm-current-source)))
-       "HF"))
+  (when (and (doom-modeline--segment-visible 'helm-follow)
+             (bound-and-true-p helm-alive-p)
+             doom-modeline--helm-current-source
+             (eq 1 (cdr (assq 'follow doom-modeline--helm-current-source))))
+    "HF"))
 
 ;;
 ;; Git timemachine
 ;;
 
 (doom-modeline-def-segment git-timemachine
-  (concat
-   (doom-modeline-spc)
-   (doom-modeline--buffer-mode-icon)
-   (doom-modeline--buffer-state-icon)
-   (format-mode-line mode-line-buffer-identification)))
+  (when (doom-modeline--segment-visible 'git-timemachine)
+    (concat
+     (doom-modeline-spc)
+     (doom-modeline--buffer-mode-icon)
+     (doom-modeline--buffer-state-icon)
+     (format-mode-line mode-line-buffer-identification))))
 
 ;;
 ;; Markdown/Org preview
 ;;
 
 (doom-modeline-def-segment grip
-  (when (bound-and-true-p grip-mode)
+  (when (and (doom-modeline--segment-visible 'grip)
+             (bound-and-true-p grip-mode))
     (let ((sep (doom-modeline-spc)))
       (concat
        sep
@@ -3434,7 +3465,8 @@ mouse-3: Restart preview"
 ;;
 
 (doom-modeline-def-segment follow
-  (when (bound-and-true-p follow-mode)
+  (when (and (doom-modeline--segment-visible 'follow)
+             (bound-and-true-p follow-mode))
     (let* ((windows (follow-all-followers))
            (nwindows (length windows))
            (nfollowing (- (length (memq (selected-window) windows)) 1)))
@@ -3537,9 +3569,9 @@ When the svg library is not available, return nil."
        :face '(:inherit doom-modeline-time :weight normal))))
 
 (doom-modeline-def-segment time
-  (when (and doom-modeline-time
-             (bound-and-true-p display-time-mode)
-             (doom-modeline--segment-visible 'time))
+  (when (and (doom-modeline--segment-visible 'time)
+             doom-modeline-time
+             (bound-and-true-p display-time-mode))
     (concat
      (doom-modeline-spc)
      (when doom-modeline-time-icon
@@ -3584,24 +3616,26 @@ When the svg library is not available, return nil."
 ;;
 
 (doom-modeline-def-segment compilation
-  (and (bound-and-true-p compilation-in-progress)
-       (propertize "[Compiling] "
-                   'face (doom-modeline-face 'doom-modeline-compilation)
-	               'help-echo "Compiling; mouse-2: Goto Buffer"
-                   'mouse-face 'doom-modeline-highlight
-                   'local-map
-                   (make-mode-line-mouse-map
-                    'mouse-2
-                    #'compilation-goto-in-progress-buffer))))
+  (when (and (doom-modeline--segment-visible 'compilation)
+             (bound-and-true-p compilation-in-progress))
+    (propertize "[Compiling] "
+                'face (doom-modeline-face 'doom-modeline-compilation)
+	        'help-echo "Compiling; mouse-2: Goto Buffer"
+                'mouse-face 'doom-modeline-highlight
+                'local-map
+                (make-mode-line-mouse-map
+                 'mouse-2
+                 #'compilation-goto-in-progress-buffer))))
 
 ;;
 ;; Eldoc
 ;;
 
 (doom-modeline-def-segment eldoc
-  (and (bound-and-true-p eldoc-mode)
-       '(eldoc-mode-line-string
-		 (" " eldoc-mode-line-string " "))))
+  (when (and (doom-modeline--segment-visible 'eldoc)
+             (bound-and-true-p eldoc-mode))
+    '(eldoc-mode-line-string
+      (" " eldoc-mode-line-string " "))))
 
 (defun doom-modeline-eldoc-minibuffer-message (format-string &rest args)
   "Display message specified by FORMAT-STRING and ARGS on the mode-line as needed.
@@ -3631,21 +3665,24 @@ Otherwise, it displays the message like `message' would."
 ;;
 
 (doom-modeline-def-segment speedbar-name
-  (propertize " %b"
-              'face (doom-modeline-face 'doom-modeline-buffer-major-mode)))
+  (when (doom-modeline--segment-visible 'speedbar-name)
+    (propertize " %b"
+                'face (doom-modeline-face 'doom-modeline-buffer-major-mode))))
 
 (doom-modeline-def-segment speedbar-info
-  (concat
-   (propertize "%l " 'face (doom-modeline-face))
-   (propertize (doom-modeline-project-name)
-               'face (doom-modeline-face 'doom-modeline-project-name))))
+  (when (doom-modeline--segment-visible 'speedbar-info)
+    (concat
+     (propertize "%l " 'face (doom-modeline-face))
+     (propertize (doom-modeline-project-name)
+                 'face (doom-modeline-face 'doom-modeline-project-name)))))
 
 ;;
 ;; Spell
 ;;
 
 (doom-modeline-def-segment spell
-  (when (and doom-modeline-spell
+  (when (and (doom-modeline--segment-visible 'spell)
+             doom-modeline-spell
              (bound-and-true-p flyspell-mode))
     (let ((sep (doom-modeline-spc))
           (vsep (doom-modeline-vspc))
@@ -3681,7 +3718,8 @@ mouse-2: Show help for minor mode"
 ;;
 
 (doom-modeline-def-segment k8s
-  (when (and (bound-and-true-p kele-mode) (doom-modeline--segment-visible 'k8s))
+  (when (and (doom-modeline--segment-visible 'k8s)
+             (bound-and-true-p kele-mode))
     (let* ((ctx (kele-current-context-name :wait nil))
            (ns (kele-current-namespace :wait nil))
            (icon (doom-modeline-icon 'mdicon "nf-md-kubernetes" "K8s:" "K8s:"))
