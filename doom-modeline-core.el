@@ -841,6 +841,13 @@ Note that `doom-modeline-tab-bar-format-global' must be added to the
                  (const :tag "Always show `doom-modeline-tab-bar-format-global' on tab bar" t))
   :group 'doom-modeline)
 
+(defcustom doom-modeline-check-segment-visible-all nil
+  "Whether to check if all segments should be shown.
+When nil, only a subset of segments will be checked for display based on
+the active window. Otherwise, all will."
+  :type 'boolean
+  :group 'doom-modeline)
+
 
 ;;
 ;; Faces
@@ -1289,13 +1296,72 @@ used as an advice to window creation functions."
          (eq (doom-modeline--selected-window) doom-modeline-current-window))))
 
 (defvar-local doom-modeline--limited-width-p nil)
+(defconst doom-modeline--legacy-always-visible-segments
+  '(buffer-encoding
+    indent-info
+    remote-host
+    major-mode
+    process
+    minor-modes
+    vcs
+    check
+    word-count
+    selection-info
+    macro-recording
+    media-info
+    bar
+    hud
+    workspace-name
+    position
+    modals
+    input-method
+    info-nodes
+    repl
+    lsp
+    pdf-pages
+    reader-pages
+    package
+    helm-buffer-id
+    helm-number
+    helm-help
+    git-timemachine
+    grip
+    follow-mode
+    time
+    compilations
+    eldoc
+    speedbar-name
+    speedbar-info
+    spell
+    k8s)
+  "List of segment names that are always visible.
+Only used when `doom-modeline-check-segment-visible-all' is nil to retain
+old behavior before filtering of segment display was added to all segments.")
 
-(defun doom-modeline--segment-visible (name)
-  "Whether the segment NAME should be displayed."
-  (and
-   (or (doom-modeline--active)
-       (member name doom-modeline-always-visible-segments))
-   (not doom-modeline--limited-width-p)))
+(defun doom-modeline--segment-visible (name &optional not-limited)
+  "Whether the segment NAME should be displayed.
+When `doom-modeline--limited-width-p is true, then the segment will not
+appear unless NOT-LIMITED is not nil."
+  (if doom-modeline-check-segment-visible-all
+      ;; New way to determine if segment should appear. First, see if window of the mode-line is the active one.
+      ;; Next, check if the modeline is considered the active one. (redundant?)
+      ;; Finally, see if segment name is in list if segments to always show
+      ;;
+      ;; When above is `t' then see if segment is shown regardless of window width.
+      ;; If not, only show if the window width is NOT too narrow.
+      (and
+       (or (mode-line-window-selected-p)    ; Should go into doom-modeline--active?
+           (doom-modeline--active)
+           (member name doom-modeline-always-visible-segments))
+       (or not-limited
+           (not doom-modeline--limited-width-p)))
+    ;; Original way of determining if a segment should appear
+    (or (member name doom-modeline--legacy-always-visible-segments)
+        (and
+         (or (doom-modeline--active)
+             (member name doom-modeline-always-visible-segments))
+         (or not-limited
+             (not doom-modeline--limited-width-p))))))
 
 (defun doom-modeline-set-selected-window (&rest _)
   "Set `doom-modeline-current-window' appropriately."
