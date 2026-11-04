@@ -1347,7 +1347,8 @@ used as an advice to window creation functions."
     k8s)
   "List of segment names that are always visible.
 Only used when `doom-modeline-check-segment-visible-all' is nil to retain
-old behavior before filtering of segment display was added to all segments.")
+old behavior before filtering of segment display was added to all segments based
+on return value of `mode-line-window-selected-p'.")
 
 (defun doom-modeline--segment-visible (name &optional not-limited)
   "Whether the segment NAME should be displayed.
